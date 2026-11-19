@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WILWATIKTA 3D — Cerita Jalanan 1998</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="stage">
+  <canvas id="gl"></canvas>
+  <div id="nogl" style="display:none"><div><h2>WebGL tidak tersedia</h2><p>Game ini butuh browser desktop dengan WebGL.</p></div></div>
+
+  <!-- ============ IN-GAME HUD ============ -->
+  <div id="hud">
+    <div id="floaters"></div>
+    <div class="panel" id="p-minimap">
+      <canvas id="minimap" width="190" height="190"></canvas>
+      <div class="map-label" id="hud-district">PANTAI KIDUL</div>
+      <div class="map-sub" id="hud-street">Jl. Batik Tulis</div>
+      <div class="rep-bar"><div id="hud-health"></div></div>
+      <div class="map-sub" id="hud-rep">REP FIXER · 1320 · LV 4</div>
+    </div>
+    <div id="p-top">
+      <div id="hud-money">$12,480</div>
+      <div id="hud-stars">★★★☆☆</div>
+      <div id="hud-time">18:37 · DAY 1 1998</div>
+      <div id="weapon-slots"></div>
+      <div id="hud-weapon-line">SMG TAWON · 32/160 ROUNDS</div>
+    </div>
+    <div class="panel" id="p-radio">
+      <div class="radio-eq">♪ <span id="hud-radio-name">Gamelan FM 101.1</span> <span class="eqbars">▂▄▆█</span></div>
+      <div class="radio-track" id="hud-radio-track">Bonang Malam — Gamelan Wilwatikta</div>
+    </div>
+    <div class="panel" id="p-car">
+      <div class="car-name" id="hud-car-name">GARUDA GT</div>
+      <div class="car-sub"><span id="hud-car-sub">CONDITION</span><span class="cond">92%</span></div>
+      <div class="car-big"><span id="hud-speed">100</span><span class="unit" id="hud-speed-unit">KM/H</span><span class="gear" id="hud-gear">G3</span></div>
+      <div class="gear-bar"><i></i><i></i><i></i><i></i><i class="dim"></i><i class="dim"></i></div>
+    </div>
+    <div class="panel" id="p-mission">
+      <div class="m-label">STORY MISSION</div>
+      <div class="m-title" id="hud-mission-title">MISSION 6/12 — BALAPAN SENJA</div>
+      <div class="m-body" id="hud-mission-body">Checkpoint 1 of 4: Kalahkan 3 pembalap.</div>
+      <div class="m-timer"><span id="hud-timer">3:13</span><span class="m-dist">▲ 12m</span></div>
+      <div class="m-bar"><div style="width:42%"></div></div>
+      <div class="m-next" id="hud-next">NEXT: GUDANG SEGARA</div>
+      <div class="m-dispatch" id="hud-dispatch">WPD DISPATCH: 2 unit mengejar — HELI 2</div>
+      <div class="m-health">HEALTH <span class="rep-bar inline"><i id="hud-health2" style="width:95%"></i></span></div>
+    </div>
+    <div id="crew-row"></div>
+    <div class="panel" id="p-dialog">
+      <canvas id="dlg-face" width="56" height="56"></canvas>
+      <div class="dlg-body">
+        <div class="dlg-who"><span id="dlg-who">AGUS</span> <span id="dlg-role">DRIVER · GETAWAY</span></div>
+        <div class="dlg-text" id="dlg-text">Balapannya dari Pantai Kidul. Jangan rem di tikungan.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TITLE ============ -->
+  <div class="screen" id="screen-title">
+    <div class="title-left">
+      <h1>WILWATIKTA</h1>
+      <div class="subtitle">CERITA JALANAN · 1998</div>
+      <div class="quote">“Setiap jalan punya harga. Setiap pelarian punya cerita.”</div>
+      <div class="menu">
+        <button class="btn primary" data-act="play">▶ &nbsp;MULAI</button>
+        <button class="btn" data-act="save">💾 &nbsp;SAVE</button>
+        <button class="btn" data-act="load">📂 &nbsp;LOAD</button>
+        <button class="btn" data-act="quit">⏻ &nbsp;END GAME</button>
+      </div>
+      <div class="save-msg" id="save-msg"></div>
+    </div>
+    <div class="title-foot">
+      <span>WASD GERAK · MOUSE KAMERA · E MASUK MOBIL · KLIK TEMBAK · Q GANTI SENJATA · M PETA · R RADIO</span>
+      <span class="right">WILWATIKTA 3D · KOTA WILWATIKTA · 1998<br>KARYA ORISINAL · DIBUAT UNTUK MAKE.FUN</span>
+    </div>
+  </div>
+
+  <!-- ============ MAP ============ -->
+  <div class="screen" id="screen-map" style="display:none">
+    <div class="map-col left">
+      <h3>📜 STORY MISSIONS</h3>
+      <div class="map-sub2">STORY 5 / 12 jobs</div>
+      <div id="mission-list"></div>
+      <div class="current-job">
+        <div class="m-label">CURRENT JOB</div>
+        <div class="m-title">Balapan Senja</div>
+        <div class="m-body">Checkpoint 1 of 4: KIDUL<br>GPS 12 m</div>
+        <div class="map-sub2">M = TUTUP PETA · KLIK IKON UNTUK GPS</div>
+      </div>
+    </div>
+    <div class="map-col center">
+      <h3 class="map-title">🗺 PETA WILWATIKTA — GPS AKTIF</h3>
+      <canvas id="bigmap" width="640" height="560"></canvas>
+    </div>
+    <div class="map-col right">
+      <h3>📊 STATS</h3>
+      <div class="stats">
+        <div><span>STORY</span><b>42%</b></div>
+        <div><span>REP</span><b>FIXER · 1320</b></div>
+        <div><span>CASH</span><b>$12,480</b></div>
+        <div><span>TIME</span><b>18:37 · DAY 1</b></div>
+        <div><span>WANTED</span><b>★★★☆☆</b></div>
+        <div><span>TAKEDOWNS</span><b>14</b></div>
+        <div><span>CARS STOLEN</span><b>6</b></div>
+        <div><span>STUNTS</span><b>$2,150</b></div>
+      </div>
+      <div class="ring">42%</div>
+      <h3>LEGENDA</h3>
+      <div class="legend">
+        <div><i style="background:#facc15"></i>Objective / Checkpoint</div>
+        <div><i style="background:#3b82f6"></i>WPD / Polisi</div>
+        <div><i style="background:#ef4444"></i>Musuh / Gang</div>
+        <div><i style="background:#14b8a6"></i>Safehouse / Garage</div>
+        <div><i style="background:#f97316"></i>Crew / Kontak</div>
+      </div>
+      <button class="btn" data-act="map">TUTUP [M]</button>
+      <button class="btn" data-act="title">TITLE</button>
+    </div>
+  </div>
+
+  <!-- ============ UPGRADE ============ -->
+  <div class="screen" id="screen-upgrade" style="display:none">
+    <div class="modal">
+      <h2>🔧 BENGKEL BAMBANG — UPGRADE</h2>
+      <p class="modal-sub">Uangmu: <b id="up-money">$12,480</b> · Bengkel buka sampai 22:00</p>
+      <div class="up-grid">
+        <div class="up-card"><h4>🛡 ARMOR</h4><p>Lapis baja Garuda GT. Tahan tembakan WPD.</p><div class="up-price">$800</div><button class="btn primary" data-buy="800">BELI</button></div>
+        <div class="up-card"><h4>⚙ MESIN TURBO</h4><p>Top speed +25%. Balapan senja jadi mudah.</p><div class="up-price">$1,200</div><button class="btn primary" data-buy="1200">BELI</button></div>
+        <div class="up-card"><h4>🔫 SMG TAWON PRO</h4><p>Magasin 48 peluru, recoil lebih halus.</p><div class="up-price">$950</div><button class="btn primary" data-buy="950">BELI</button></div>
+      </div>
+      <button class="btn" data-act="upgrade">TUTUP [U]</button>
+    </div>
+  </div>
+
+  <!-- ============ PAUSE ============ -->
+  <div class="screen" id="screen-pause" style="display:none">
+    <div class="modal">
+      <h2>⏸ JEDA</h2>
+      <p class="modal-sub">Wilwatikta menunggumu, Sugeng.</p>
+      <div class="menu">
+        <button class="btn primary" data-act="resume">▶ &nbsp;LANJUT</button>
+        <button class="btn" data-act="save">💾 &nbsp;SAVE</button>
+        <button class="btn" data-act="load">📂 &nbsp;LOAD</button>
+        <button class="btn" data-act="title">🏠 &nbsp;TITLE</button>
+      </div>
+      <div class="save-msg" id="save-msg2"></div>
+    </div>
+  </div>
+
+  <!-- ============ MISSION PASSED ============ -->
+  <div class="screen" id="screen-passed" style="display:none">
+    <div class="modal passed">
+      <h2>★ MISSION PASSED ★</h2>
+      <div class="passed-name" id="passed-name">BALAPAN SENJA</div>
+      <div class="passed-pay" id="passed-pay">$700</div>
+      <p class="modal-sub">Respect naik. WPD makin panas.</p>
+    </div>
+  </div>
+</div>
+<script type="module" src="js/gl.js"></script>
+<script type="module" src="js/city.js"></script>
+<script type="module" src="js/world.js"></script>
+<script type="module" src="js/actors.js"></script>
+<script type="module" src="js/missions.js"></script>
+<script type="module" src="js/hud.js"></script>
+<script type="module" src="js/audio.js"></script>
+<script type="module" src="js/game.js"></script>
+</body>
+</html>
